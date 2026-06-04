@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = 'https://car-dealership-api.onrender.com/api/cars';
+const API_URL = 'https://car-dealership-api-b3mx.onrender.com/api/cars';
 const CLOUDINARY_CLOUD_NAME = 'dleye4vxg';
 const CLOUDINARY_UPLOAD_PRESET = 'car_dealership';
 
