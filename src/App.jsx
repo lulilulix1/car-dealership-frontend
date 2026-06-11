@@ -29,7 +29,7 @@ function App() {
   const [newCar, setNewCar] = useState({
     brand: '', model: '', year: '', price: '', km: '', fuel: 'Benzine',
     transmission: 'Manual', engineSize: '', images: [], description: '',
-    isDoganuar: false, transportNePort: false, lokacioni: 'Durrës'
+    isDoganuar: false, transportNePort: false, lokacioni: 'Tiranë'
   });
 
   useEffect(() => {
@@ -173,29 +173,35 @@ function App() {
       });
       
       if (response.data.success) {
+        // Shto fotot e reja pa i fshirë të vjetrat
         if (response.data.images && response.data.images.length > 0) {
-          setNewCar(prev => ({
-            ...prev,
-            images: response.data.images
-          }));
+          setNewCar(prev => {
+            const existingImages = prev.images || [];
+            const uniqueNewImages = response.data.images.filter(img => !existingImages.includes(img));
+            return {
+              ...prev,
+              images: [...existingImages, ...uniqueNewImages]
+            };
+          });
         }
         
+        // Plotëso të dhënat e veturës (vetëm nëse janë bosh)
         const data = response.data.carData;
         setNewCar(prev => ({
           ...prev,
-          brand: data.brand || prev.brand,
-          model: data.model || prev.model,
-          year: data.year || prev.year,
-          price: data.price || prev.price,
-          km: data.km || prev.km,
-          fuel: data.fuel || prev.fuel,
-          transmission: data.transmission || prev.transmission,
-          engineSize: data.engineSize || prev.engineSize,
-          lokacioni: data.lokacioni || prev.lokacioni,
-          description: data.description || prev.description
+          brand: prev.brand || data.brand,
+          model: prev.model || data.model,
+          year: prev.year || data.year,
+          price: prev.price || data.price,
+          km: prev.km || data.km,
+          fuel: prev.fuel || data.fuel,
+          transmission: prev.transmission || data.transmission,
+          engineSize: prev.engineSize || data.engineSize,
+          lokacioni: prev.lokacioni || data.lokacioni,
+          description: prev.description || data.description
         }));
         
-        alert(`U nxorrën ${response.data.images.length} foto dhe të dhënat e veturës! Kontrollo dhe ndrysho nëse duhet.`);
+        alert(`U nxorrën ${response.data.images.length} foto të reja!`);
         setExtractUrl('');
       } else {
         alert('Nuk u gjet asnjë të dhënë në këtë faqe');
@@ -220,7 +226,7 @@ function App() {
       setNewCar({
         brand: '', model: '', year: '', price: '', km: '', fuel: 'Benzine',
         transmission: 'Manual', engineSize: '', images: [], description: '',
-        isDoganuar: false, transportNePort: false, lokacioni: 'Durrës'
+        isDoganuar: false, transportNePort: false, lokacioni: 'Tiranë'
       });
       setShowForm(false);
       fetchCars();
@@ -250,7 +256,7 @@ function App() {
       km: car.km, fuel: car.fuel, transmission: car.transmission || 'Manual',
       engineSize: car.engineSize || '', images: car.images || [], description: car.description || '',
       isDoganuar: car.isDoganuar || false, transportNePort: car.transportNePort || false,
-      lokacioni: car.lokacioni || 'Durrës'
+      lokacioni: car.lokacioni || 'Tiranë'
     });
     setShowForm(true);
   };
@@ -264,7 +270,7 @@ function App() {
       setNewCar({
         brand: '', model: '', year: '', price: '', km: '', fuel: 'Benzine',
         transmission: 'Manual', engineSize: '', images: [], description: '',
-        isDoganuar: false, transportNePort: false, lokacioni: 'Durrës'
+        isDoganuar: false, transportNePort: false, lokacioni: 'Tiranë'
       });
       setShowForm(false);
       fetchCars();
@@ -280,7 +286,7 @@ function App() {
     setNewCar({
       brand: '', model: '', year: '', price: '', km: '', fuel: 'Benzine',
       transmission: 'Manual', engineSize: '', images: [], description: '',
-      isDoganuar: false, transportNePort: false, lokacioni: 'Durrës'
+      isDoganuar: false, transportNePort: false, lokacioni: 'Tiranë'
     });
     setShowForm(false);
   };
@@ -300,19 +306,65 @@ function App() {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const images = car.images && car.images.length > 0 ? car.images : ['https://images.unsplash.com/photo-1503376780354-7e6690d241a4?w=800&h=500&fit=crop'];
 
+    const nextImage = () => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    };
+
+    const prevImage = () => {
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    };
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onClose}>
         <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-          <div className="relative bg-gray-900 min-h-[400px] flex items-center justify-center">
-            <img src={images[currentImageIndex]} alt={car.model} className="max-w-full max-h-[400px] object-contain" />
+          <div className="relative bg-gray-900 min-h-[450px] flex items-center justify-center">
+            {/* Butoni i majtë */}
+            {images.length > 1 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl hover:bg-opacity-75 transition z-10"
+              >
+                ◀
+              </button>
+            )}
+            
+            {/* Fotoja */}
+            <img 
+              src={images[currentImageIndex]} 
+              alt={car.model} 
+              className="max-w-full max-h-[450px] object-contain cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); nextImage(); }}
+            />
+            
+            {/* Butoni i djathtë */}
+            {images.length > 1 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl hover:bg-opacity-75 transition z-10"
+              >
+                ▶
+              </button>
+            )}
+            
+            {/* Pikat treguese */}
             {images.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                 {images.map((_, idx) => (
-                  <button key={idx} onClick={() => setCurrentImageIndex(idx)} className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-blue-600 w-6' : 'bg-gray-400'}`} />
+                  <button 
+                    key={idx} 
+                    onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(idx); }} 
+                    className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-blue-600 w-6' : 'bg-gray-400'}`} 
+                  />
                 ))}
               </div>
             )}
-            <button onClick={onClose} className="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl hover:bg-opacity-75">✕</button>
+            
+            <button 
+              onClick={onClose} 
+              className="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl hover:bg-opacity-75 transition z-10"
+            >
+              ✕
+            </button>
           </div>
           <div className="p-6">
             <h2 className="text-2xl font-bold">{car.brand} {car.model} ({car.year})</h2>
@@ -356,7 +408,7 @@ function App() {
                 setNewCar({
                   brand: '', model: '', year: '', price: '', km: '', fuel: 'Benzine',
                   transmission: 'Manual', engineSize: '', images: [], description: '',
-                  isDoganuar: false, transportNePort: false, lokacioni: 'Durrës'
+                  isDoganuar: false, transportNePort: false, lokacioni: 'Tiranë'
                 });
                 setShowForm(!showForm);
               }} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition text-sm md:text-base">
@@ -405,7 +457,7 @@ function App() {
                 <option value="Manual">Manual</option>
                 <option value="Automatik">Automatik</option>
               </select>
-              <input type="text" placeholder="Madhësia e motorit (p.sh. 1.6, 2.0)" className="border p-2 rounded text-sm" value={newCar.engineSize} onChange={e => setNewCar({...newCar, engineSize: e.target.value})} />
+              <input type="text" placeholder="Madhësia e motorit (p.sh. 1.6 L, 2.0 L)" className="border p-2 rounded text-sm" value={newCar.engineSize} onChange={e => setNewCar({...newCar, engineSize: e.target.value})} />
               <textarea placeholder="Përshkrimi" className="border p-2 rounded md:col-span-2 text-sm" rows="2" value={newCar.description} onChange={e => setNewCar({...newCar, description: e.target.value})}></textarea>
               
               {/* Nxjerrja e të dhënave nga URL */}
@@ -448,6 +500,9 @@ function App() {
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Mund të nxirrni foto nga disa URL të ndryshme – fotot do të shtohen, nuk do të zëvendësohen.
+                </p>
               </div>
               
               <div className="md:col-span-2 flex gap-4">
@@ -490,20 +545,20 @@ function App() {
             </select>
             <select name="engineSize" className="border p-2 rounded text-sm" onChange={handleFilterChange}>
               <option value="">Madhësia e motorit</option>
-              <option value="1.0">1.0</option>
-              <option value="1.2">1.2</option>
-              <option value="1.3">1.3</option>
-              <option value="1.4">1.4</option>
-              <option value="1.5">1.5</option>
-              <option value="1.6">1.6</option>
-              <option value="1.7">1.7</option>
-              <option value="1.8">1.8</option>
-              <option value="1.9">1.9</option>
-              <option value="2.0">2.0</option>
-              <option value="2.2">2.2</option>
-              <option value="2.4">2.4</option>
-              <option value="2.5">2.5</option>
-              <option value="3.0">3.0</option>
+              <option value="1.0 L">1.0 L</option>
+              <option value="1.2 L">1.2 L</option>
+              <option value="1.3 L">1.3 L</option>
+              <option value="1.4 L">1.4 L</option>
+              <option value="1.5 L">1.5 L</option>
+              <option value="1.6 L">1.6 L</option>
+              <option value="1.7 L">1.7 L</option>
+              <option value="1.8 L">1.8 L</option>
+              <option value="1.9 L">1.9 L</option>
+              <option value="2.0 L">2.0 L</option>
+              <option value="2.2 L">2.2 L</option>
+              <option value="2.4 L">2.4 L</option>
+              <option value="2.5 L">2.5 L</option>
+              <option value="3.0 L">3.0 L</option>
             </select>
             <select name="transmission" className="border p-2 rounded text-sm" onChange={handleFilterChange}>
               <option value="">Transmetimi</option>
