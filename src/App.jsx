@@ -144,7 +144,6 @@ function App() {
     }
   };
 
-  // Ngarkim i shumë fotove njëherësh
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -163,6 +162,25 @@ function App() {
     
     setUploading(false);
     e.target.value = '';
+  };
+
+  const addUrlsAsImages = () => {
+    const textarea = document.getElementById('imageUrlsInput');
+    if (!textarea) return;
+    
+    const urls = textarea.value.split('\n');
+    const validUrls = urls.filter(url => url.trim().match(/\.(jpg|jpeg|png|webp)/i));
+    
+    if (validUrls.length) {
+      setNewCar(prev => ({
+        ...prev,
+        images: [...(prev.images || []), ...validUrls.map(u => u.trim())]
+      }));
+      textarea.value = '';
+      alert(`U shtuan ${validUrls.length} foto!`);
+    } else {
+      alert('Nuk u gjet asnjë URL e vlefshme!');
+    }
   };
 
   const extractCarData = async () => {
@@ -498,29 +516,54 @@ function App() {
               </div>
               
               <div className="md:col-span-2">
-                <label className="font-semibold text-sm block mb-1">📸 Fotot:</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    multiple 
-                    onChange={handleImageUpload} 
-                    className="border p-1 rounded text-sm flex-1" 
-                    disabled={uploading} 
-                  />
-                </div>
+                <label className="font-semibold text-sm block mb-1">📸 Ngarko foto nga kompjuteri:</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleImageUpload} 
+                  className="border p-1 rounded text-sm w-full" 
+                  disabled={uploading} 
+                />
                 {uploading && <span className="text-blue-500 text-xs">Duke ngarkuar fotot...</span>}
+                <p className="text-xs text-gray-400 mt-1">
+                  Mbaj <kbd>Ctrl</kbd> (ose <kbd>Shift</kbd>) për të zgjedhur disa foto njëherësh.
+                </p>
+              </div>
+              
+              <div className="md:col-span-2">
+                <label className="font-semibold text-sm block mb-1">📋 Ose ngjit URL-të e fotove (një në çdo rresht):</label>
+                <textarea
+                  id="imageUrlsInput"
+                  placeholder="https://example.com/foto1.jpg&#10;https://example.com/foto2.png&#10;https://example.com/foto3.jpg"
+                  className="border p-2 rounded text-sm w-full"
+                  rows="3"
+                ></textarea>
+                <button
+                  type="button"
+                  onClick={addUrlsAsImages}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-sm mt-1 hover:bg-green-700 transition"
+                >
+                  + Shto URL-të
+                </button>
+                <p className="text-xs text-gray-400 mt-1">
+                  Kopjo URL-të nga ImageGrab ose burime tjera dhe ngjiti këtu (një URL për rresht).
+                </p>
+              </div>
+              
+              <div className="md:col-span-2">
+                <label className="font-semibold text-sm block mb-1">🖼️ Fotot e zgjedhura:</label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {newCar.images && newCar.images.map((img, idx) => (
                     <div key={idx} className="relative">
-                      <img src={img} alt={`Foto ${idx+1}`} className="w-14 h-14 object-cover rounded" />
-                      <button type="button" onClick={() => removeImage(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs">✕</button>
+                      <img src={img} alt={`Foto ${idx+1}`} className="w-14 h-14 object-cover rounded border" />
+                      <button type="button" onClick={() => removeImage(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs hover:bg-red-700">✕</button>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Mund të zgjidhni disa foto njëherësh (mbaj Ctrl ose Shift për të zgjedhur shumë).
-                </p>
+                {(!newCar.images || newCar.images.length === 0) && (
+                  <p className="text-xs text-gray-400 mt-1">Nuk ka foto të zgjedhura.</p>
+                )}
               </div>
               
               <div className="md:col-span-2 flex gap-4">
