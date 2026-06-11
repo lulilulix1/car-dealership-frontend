@@ -144,18 +144,23 @@ function App() {
     }
   };
 
+  // Ngarkim i shumë fotove njëherësh
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
     
     setUploading(true);
-    const imageUrl = await uploadImageToCloudinary(file);
-    if (imageUrl) {
-      setNewCar(prev => ({
-        ...prev,
-        images: [...(prev.images || []), imageUrl]
-      }));
+    
+    for (const file of files) {
+      const imageUrl = await uploadImageToCloudinary(file);
+      if (imageUrl) {
+        setNewCar(prev => ({
+          ...prev,
+          images: [...(prev.images || []), imageUrl]
+        }));
+      }
     }
+    
     setUploading(false);
     e.target.value = '';
   };
@@ -173,7 +178,6 @@ function App() {
       });
       
       if (response.data.success) {
-        // Shto fotot e reja pa i fshirë të vjetrat
         if (response.data.images && response.data.images.length > 0) {
           setNewCar(prev => {
             const existingImages = prev.images || [];
@@ -185,7 +189,6 @@ function App() {
           });
         }
         
-        // Plotëso të dhënat e veturës (vetëm nëse janë bosh)
         const data = response.data.carData;
         setNewCar(prev => ({
           ...prev,
@@ -304,7 +307,14 @@ function App() {
   const CarModal = ({ car, onClose }) => {
     if (!car) return null;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const images = car.images && car.images.length > 0 ? car.images : ['https://images.unsplash.com/photo-1503376780354-7e6690d241a4?w=800&h=500&fit=crop'];
+    
+    let images = car.images && car.images.length > 0 
+      ? [...new Set(car.images.filter(img => img && img.startsWith('http') && !img.includes('placeholder')))]
+      : ['https://images.unsplash.com/photo-1503376780354-7e6690d241a4?w=800&h=500&fit=crop'];
+    
+    if (images.length === 0) {
+      images = ['https://images.unsplash.com/photo-1503376780354-7e6690d241a4?w=800&h=500&fit=crop'];
+    }
 
     const nextImage = () => {
       setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -318,7 +328,6 @@ function App() {
       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onClose}>
         <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
           <div className="relative bg-gray-900 min-h-[450px] flex items-center justify-center">
-            {/* Butoni i majtë */}
             {images.length > 1 && (
               <button 
                 onClick={(e) => { e.stopPropagation(); prevImage(); }}
@@ -328,15 +337,20 @@ function App() {
               </button>
             )}
             
-            {/* Fotoja */}
             <img 
               src={images[currentImageIndex]} 
               alt={car.model} 
               className="max-w-full max-h-[450px] object-contain cursor-pointer"
               onClick={(e) => { e.stopPropagation(); nextImage(); }}
+              onError={(e) => {
+                if (images.length > 1) {
+                  nextImage();
+                } else {
+                  e.target.src = 'https://images.unsplash.com/photo-1503376780354-7e6690d241a4?w=800&h=500&fit=crop';
+                }
+              }}
             />
             
-            {/* Butoni i djathtë */}
             {images.length > 1 && (
               <button 
                 onClick={(e) => { e.stopPropagation(); nextImage(); }}
@@ -346,7 +360,6 @@ function App() {
               </button>
             )}
             
-            {/* Pikat treguese */}
             {images.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                 {images.map((_, idx) => (
@@ -460,7 +473,6 @@ function App() {
               <input type="text" placeholder="Madhësia e motorit (p.sh. 1.6 L, 2.0 L)" className="border p-2 rounded text-sm" value={newCar.engineSize} onChange={e => setNewCar({...newCar, engineSize: e.target.value})} />
               <textarea placeholder="Përshkrimi" className="border p-2 rounded md:col-span-2 text-sm" rows="2" value={newCar.description} onChange={e => setNewCar({...newCar, description: e.target.value})}></textarea>
               
-              {/* Nxjerrja e të dhënave nga URL */}
               <div className="md:col-span-2 bg-purple-50 p-3 rounded-lg">
                 <label className="font-semibold text-sm block mb-1">🔗 Nxirr të dhënat automatikisht:</label>
                 <div className="flex gap-2">
@@ -485,13 +497,19 @@ function App() {
                 </p>
               </div>
               
-              {/* Fotot */}
               <div className="md:col-span-2">
                 <label className="font-semibold text-sm block mb-1">📸 Fotot:</label>
                 <div className="flex gap-2">
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="border p-1 rounded text-sm flex-1" disabled={uploading} />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    multiple 
+                    onChange={handleImageUpload} 
+                    className="border p-1 rounded text-sm flex-1" 
+                    disabled={uploading} 
+                  />
                 </div>
-                {uploading && <span className="text-blue-500 text-xs">Duke ngarkuar...</span>}
+                {uploading && <span className="text-blue-500 text-xs">Duke ngarkuar fotot...</span>}
                 <div className="flex flex-wrap gap-2 mt-2">
                   {newCar.images && newCar.images.map((img, idx) => (
                     <div key={idx} className="relative">
@@ -501,7 +519,7 @@ function App() {
                   ))}
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
-                  Mund të nxirrni foto nga disa URL të ndryshme – fotot do të shtohen, nuk do të zëvendësohen.
+                  Mund të zgjidhni disa foto njëherësh (mbaj Ctrl ose Shift për të zgjedhur shumë).
                 </p>
               </div>
               
@@ -532,7 +550,6 @@ function App() {
           </form>
         )}
 
-        {/* Filtrat e Kërkimit */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             <input type="text" name="brand" placeholder="Marka" className="border p-2 rounded text-sm" onChange={handleFilterChange} />
